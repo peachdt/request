@@ -4,8 +4,10 @@ import (
 	"io"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httputil"
 	"net/url"
 	"strings"
+	"fmt"
 
 	"golang.org/x/net/publicsuffix"
 )
@@ -34,6 +36,7 @@ type Args struct {
 	Proxy     string
 	BasicAuth BasicAuth
 	Body      io.Reader
+	DumpReq	  bool
 }
 
 type Request struct {
@@ -130,6 +133,12 @@ func newRequest(method string, url string, a *Args) (resp *Response, err error) 
 		req.SetBasicAuth(a.BasicAuth.Username, a.BasicAuth.Password)
 	}
 
+	// If desired, dump the outgoing http request for debugging purposes
+	if a.DumpReq {
+		dump, _ := httputil.DumpRequest(req, true)
+		fmt.Printf("******************** New Request ********************\n%s" +
+			"\n******************** End Request ********************\n\n", dump)
+	}
 	s, err := a.Client.Do(req)
 	resp = &Response{s, nil}
 	return
@@ -323,5 +332,6 @@ func req2arg(req *Request) (a *Args) {
 		Proxy:     req.Proxy,
 		BasicAuth: req.BasicAuth,
 		Body:      req.Body,
+		DumpReq:   req.DumpReq,
 	}
 }
